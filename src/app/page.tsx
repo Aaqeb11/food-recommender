@@ -8,9 +8,16 @@ interface IFilter {
   value: string;
 }
 
+interface INutritionItem {
+  name: string;
+  protein: number;
+  fat: number;
+  carbs: number;
+}
+
 export default function Page() {
   const [selectedFilter, setSelectedFilter] = useState<String | null>(null);
-  const [results, setResults] = useState([]);
+  const [results, setResults] = useState<NutritionItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
