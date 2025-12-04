@@ -17,7 +17,7 @@ interface INutritionItem {
 
 export default function Page() {
   const [selectedFilter, setSelectedFilter] = useState<String | null>(null);
-  const [results, setResults] = useState<NutritionItem[]>([]);
+  const [results, setResults] = useState<INutritionItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
