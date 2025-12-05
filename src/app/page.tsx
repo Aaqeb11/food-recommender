@@ -9,15 +9,30 @@ interface IFilter {
 }
 
 interface INutritionItem {
-  name: string;
+  fdc_id: number;
+  description: string;
+  cluster_name: string;
+  calories_final: number;
   protein: number;
   fat: number;
-  carbs: number;
+  carbohydrate: number;
+  fiber: number;
+  sodium: number;
+}
+
+interface IApiResponse {
+  cluster_name: string;
+  count: number;
+  results: INutritionItem[];
 }
 
 export default function Page() {
-  const [selectedFilter, setSelectedFilter] = useState<String | null>(null);
+  const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
   const [results, setResults] = useState<INutritionItem[]>([]);
+  const [clusterInfo, setClusterInfo] = useState<{
+    name: string;
+    count: number;
+  } | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -26,13 +41,33 @@ export default function Page() {
       id: "high-protein",
       label: "High Protein",
       param: "protein",
-      value: "high",
+      value: "High Protein",
     },
-    { id: "low-protein", label: "Low Protein", param: "protein", value: "low" },
-    { id: "high-fat", label: "High Fat", param: "fat", value: "high" },
-    { id: "low-fat", label: "Low Fat", param: "fat", value: "low" },
-    { id: "high-carbs", label: "High Carbs", param: "carbs", value: "high" },
-    { id: "low-carbs", label: "Low Carbs", param: "carbs", value: "low" },
+    {
+      id: "low-calorie",
+      label: "Low Calorie",
+      param: "calories",
+      value: "Low Calorie",
+    },
+    { id: "high-fat", label: "High Fat", param: "fat", value: "High Fat" },
+    {
+      id: "high-carbs",
+      label: "High Carbs",
+      param: "carbs",
+      value: "High Carb",
+    },
+    {
+      id: "high-fiber",
+      label: "High Fiber",
+      param: "fiber",
+      value: "High Fiber",
+    },
+    {
+      id: "high-sodium",
+      label: "High Sodium",
+      param: "sodium",
+      value: "High Sodium",
+    },
   ];
 
   const handleFilterClick = async (filter: IFilter) => {
@@ -41,19 +76,23 @@ export default function Page() {
     setError("");
 
     try {
-      // Replace with your actual API endpoint
       const response = await fetch(
-        `/api/nutrition?${filter.param}=${filter.value}`,
+        `http://localhost:8000/foods/by-cluster?cluster_name=${encodeURIComponent(filter.value)}&limit=50`,
       );
 
       if (!response.ok) {
         throw new Error("Failed to fetch data");
       }
 
-      const data = await response.json();
-      setResults(data);
+      const data: IApiResponse = await response.json();
+
+      // Extract results array from the response
+      setResults(data.results);
+      setClusterInfo({ name: data.cluster_name, count: data.count });
     } catch (err: any) {
       setError(err.message || "An error occurred");
+      setResults([]);
+      setClusterInfo(null);
     } finally {
       setLoading(false);
     }
@@ -95,19 +134,53 @@ export default function Page() {
           </div>
         )}
 
-        {!loading && results.length > 0 && (
+        {!loading && results.length > 0 && clusterInfo && (
           <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold mb-4">Results</h2>
-            <div className="space-y-3">
-              {results.map((item, idx) => (
+            <div className="mb-4">
+              <h2 className="text-xl font-semibold">Results</h2>
+              <p className="text-sm text-gray-600 mt-1">
+                Cluster: {clusterInfo.name} ({clusterInfo.count} items)
+              </p>
+            </div>
+            <div className="space-y-4">
+              {results.map((item) => (
                 <div
-                  key={idx}
-                  className="border-b border-gray-200 pb-3 last:border-b-0"
+                  key={item.fdc_id}
+                  className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
                 >
-                  <h3 className="font-medium text-gray-900">{item.name}</h3>
-                  <div className="text-sm text-gray-600 mt-1">
-                    Protein: {item.protein}g | Fat: {item.fat}g | Carbs:{" "}
-                    {item.carbs}g
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="font-medium text-gray-900 flex-1">
+                      {item.description}
+                    </h3>
+                    <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded ml-2">
+                      {item.cluster_name}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm text-gray-600">
+                    <div>
+                      <span className="font-medium">Calories:</span>{" "}
+                      {item.calories_final || 0}
+                    </div>
+                    <div>
+                      <span className="font-medium">Protein:</span>{" "}
+                      {item.protein?.toFixed(1) || 0}g
+                    </div>
+                    <div>
+                      <span className="font-medium">Fat:</span>{" "}
+                      {item.fat?.toFixed(1) || 0}g
+                    </div>
+                    <div>
+                      <span className="font-medium">Carbs:</span>{" "}
+                      {item.carbohydrate?.toFixed(1) || 0}g
+                    </div>
+                    <div>
+                      <span className="font-medium">Fiber:</span>{" "}
+                      {item.fiber?.toFixed(1) || 0}g
+                    </div>
+                    <div>
+                      <span className="font-medium">Sodium:</span>{" "}
+                      {item.sodium?.toFixed(0) || 0}mg
+                    </div>
                   </div>
                 </div>
               ))}
